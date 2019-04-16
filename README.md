@@ -2,7 +2,7 @@
 
 
 ![Gif of Bamazon]
-(https://giphy.com/embed/dnsPj8DMud5moCS2gu)
+(https://media.giphy.com/media/dnsPj8DMud5moCS2gu/giphy.gif)
 
 
 In this assignment, we are to create a database called "bamazon_db;" using MySQL Workbench and within that database we also create a table called "products".
