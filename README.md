@@ -2,8 +2,7 @@
 
 
 ![Gif of Bamazon]
-(https://github.com/BrokeTheInternet/Node.JS-MySQL/blob/master/Bamazon.gif)
-
+(https://media.giphy.com/media/dnsPj8DMud5moCS2gu/giphy.gif)
 Link to Gif: https://media.giphy.com/media/dnsPj8DMud5moCS2gu/giphy.gif
 
 
