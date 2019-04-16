@@ -1,28 +1,140 @@
-var mysql = require("mysql");
-var inquirer = require("inquirer");
-var Table = require("cli-table2");
+// Pull in required dependencies
+var inquirer = require('inquirer');
+var mysql = require('mysql');
+var Table = require('cli-table2');
 
+// Define the MySQL connection parameters
 var connection = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "5361869LoL",
-    database: "bamazon_db",
-    port: 3306
-    // multipleStatements: true
-});
-connection.connect();
+	host: 'localhost',
+	port: 3306,
 
-var display = function () {
-    connection.query("SELECT * FROM products", function (err, res) {
-        if (err) throw err;
-        console.log("*********************************");
-        console.log("*      Welcome to Bamazon!      *");
-        console.log("*********************************");
+	// Your username
+	user: 'root',
+
+	// Your password
+	password: '5361869LoL',
+	database: 'bamazon_db'
+});
+
+// validateInput makes sure that the user is supplying only positive integers for their inputs
+function validateInput(value) {
+	var integer = Number.isInteger(parseFloat(value));
+	var sign = Math.sign(value);
+
+	if (integer && (sign === 1)) {
+		return true;
+	} else {
+		return 'Please enter a whole non-zero number.';
+	}
+}
+
+// promptUserPurchase will prompt the user for the item/quantity they would like to purchase
+function promptUserPurchase() {
+	// console.log('___ENTER promptUserPurchase___');
+
+	// Prompt the user to select an item
+	inquirer.prompt([
+		{
+			type: 'input',
+			name: 'item_id',
+			message: 'Please enter the Item ID which you would like to purchase:',
+			validate: validateInput,
+			filter: Number
+		},
+		{
+			type: 'input',
+			name: 'quantity',
+			message: 'How many do you need?',
+			validate: validateInput,
+			filter: Number
+		}
+	]).then(function(input) {
+		// console.log('Customer has selected: \n    item_id = '  + input.item_id + '\n    quantity = ' + input.quantity);
+
+		var item = input.item_id;
+		var quantity = input.quantity;
+
+		// Query db to confirm that the given item ID exists in the desired quantity
+		var queryStr = 'SELECT * FROM products WHERE ?';
+
+		connection.query(queryStr, {item_id: item}, function(err, data) {
+			if (err) throw err;
+
+			// If the user has selected an invalid item ID, data attay will be empty
+			// console.log('data = ' + JSON.stringify(data));
+
+			if (data.length === 0) {
+				console.log('ERROR: Invalid Item ID. Please select a valid Item ID.');
+				display();
+
+			} else {
+				var productData = data[0];
+
+				// console.log('productData = ' + JSON.stringify(productData));
+				// console.log('productData.stock_quantity = ' + productData.stock_quantity);
+
+				// If the quantity requested by the user is in stock
+				if (quantity <= productData.stock_quantity) {
+					console.log('Congratulations, the product you requested is in stock! Placing order!');
+
+					// Construct the updating query string
+					var updateQueryStr = 'UPDATE products SET stock_quantity = ' + (productData.stock_quantity - quantity) + ' WHERE item_id = ' + item;
+					// console.log('updateQueryStr = ' + updateQueryStr);
+
+					// Update the inventory
+					connection.query(updateQueryStr, function(err, data) {
+						if (err) throw err;
+
+						console.log('Your oder has been placed! Your total is: $' + productData.price * quantity);
+						console.log('Thank you for shopping with us!');
+						console.log("\n---------------------------------------------------------------------\n");
+
+						// End the database connection
+						connection.end();
+					})
+				} else {
+					console.log('Sorry, there is not enough product in stock, your order can not be placed as is.');
+					console.log('Please modify your order.');
+					console.log("\n---------------------------------------------------------------------\n");
+
+					display();
+				}
+			}
+		})
+	})
+}
+
+// display will retrieve the current inventory from the database and output it to the console
+function display() {
+	// console.log('___ENTER display___');
+
+	// Construct the db query string
+	queryStr = 'SELECT * FROM products';
+
+	// Make the db query
+	connection.query(queryStr, function(err, data) {
+		if (err) throw err;
+
+        console.log("-----------------------------");
+        console.log("      Welcome To Bamazon    ");
+        console.log("-----------------------------");
         console.log("");
-        console.log("Find Our Products Below");
+        console.log("Check Out Our Current Inventory");
         console.log("");
+		console.log('-----------------------------\n');
+
+		// var strOut = '';
+		// for (var i = 0; i < data.length; i++) {
+		// 	strOut = '';
+		// 	strOut += 'Item ID: ' + data[i].item_id + '  //  ';
+		// 	strOut += 'Product Name: ' + data[i].product_name + '  //  ';
+		// 	strOut += 'Department: ' + data[i].department_name + '  //  ';
+		// 	strOut += 'Price: $' + data[i].price + '\n';
+
+		// 	console.log(strOut);
+        // }
         var table = new Table({
-            head: ['Product ID', 'Product Desciption', 'Department Name', 'Cost'],
+            head: ['Item ID', 'Product Desciption', 'Department Name', 'Cost'],
             colWidths: [12, 30, 20, 12],
             colAligns: ["center", "left", "right"],
             style: {
@@ -30,76 +142,26 @@ var display = function () {
                 compact: true
             }
         });
-        for (var i = 0; i < res.length; i++) {
-            table.push([res[i].item_id, res[i].product_name, res[i].department_name, res[i].price]);
+        for (var i = 0; i < data.length; i++) {
+            table.push([data[i].item_id, data[i].product_name, data[i].department_name, data[i].price]);
         }
         console.log(table.toString());
-        console.log("");
-        shopping();
-    });
-};
 
-var shopping = function() {
-    inquirer
-      .prompt({
-        name: "productToBuy",
-        type: "input",
-        message: "Please enter the Product ID of the item you wish to purchase:"
-      })
-      .then(function(answer1) {
-        var selection = answer1.productToBuy;
-        connection.query("SELECT * FROM products WHERE item_id=?", selection, function(
-          err,
-          res
-        ) {
-          if (err) throw err;
-          if (res.length === 0) {
-            console.log(
-              "That Product doesn't exist; Please enter a Product ID from the list above"
-            );
-  
-            shopping();
-          } else {
-            inquirer
-              .prompt({
-                name: "quantity",
-                type: "input",
-                message: "How many items would you like to purchase?"
-              })
-              .then(function(answer2) {
-                var quantity = answer2.quantity;
-                if (quantity > res[0].stock_quantity) {
-                  console.log(
-                    "Our Apologies we only have " +
-                      res[0].stock_quantity +
-                      " items of the product selected"
-                  );
-                  shopping();
-                } else {
-                  console.log("");
-                  console.log(res[0].product_name + " purchased");
-                  console.log(quantity + " qty @ $" + res[0].price);
-  
-                  var newQuantity = res[0].stock_quantity - quantity;
-                  connection.query(
-                    "UPDATE products SET stock_quantity = " +
-                      newQuantity +
-                      "WHERE item_id = " +
-                      res[0].item_id,
-                    function(err, resUpdate) {
-                      if (err) throw err;
-                      console.log("");
-                      console.log("Your Order has been Processed");
-                      console.log("Thank you for Shopping with us...!");
-                      console.log("");
-                      connection.end();
-                    }
-                  );
-                }
-              });
-          }
-        });
-      });
-};
-  
-display();
+          console.log("---------------------------------------------------------------------------\n");
+          
+
+	  	//Prompt the user for item/quantity they would like to purchase
+	  	promptUserPurchase();
+	})
+}
+
+// runBamazon will execute the main application logic
+function runBamazon() {
+	// console.log('___ENTER runBamazon___');
+
+	// Display the available inventory
+	display();
+}
+
+// Run the application logic
+runBamazon();
