@@ -1,8 +1,9 @@
 # Node.JS-MySQL
 
 
-![Gif of Bamazon]
+![Image of Bamazon]
 (https://media.giphy.com/media/dnsPj8DMud5moCS2gu/giphy.gif)
+
 Link to Gif: https://media.giphy.com/media/dnsPj8DMud5moCS2gu/giphy.gif
 
 
