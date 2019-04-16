@@ -1,7 +1,8 @@
 # Node.JS-MySQL
 
 
-![Gif of Bamazon](https://giphy.com/embed/dnsPj8DMud5moCS2gu)
+![Gif of Bamazon]
+(https://giphy.com/embed/dnsPj8DMud5moCS2gu)
 
 
 In this assignment, we are to create a database called "bamazon_db;" using MySQL Workbench and within that database we also create a table called "products".
